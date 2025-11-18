@@ -10,8 +10,6 @@ dotenv.config();
 
 const app = express();
 
-app.use(helmet());
-
 // Default allowed origins (always included)
 const defaultOrigins = [
   "https://receiptbooth-photomate.netlify.app",
@@ -35,15 +33,52 @@ if (envOrigins.length === 0 && !process.env.ALLOWED_ORIGINS) {
   allowedOrigins = [...defaultOrigins, ...envOrigins];
 }
 
+// CORS must be configured before helmet to prevent header conflicts
 const corsOptions = {
-  origin: allowedOrigins === "*" ? "*" : allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Always allow Netlify origin
+    if (origin === "https://receiptbooth-photomate.netlify.app") {
+      return callback(null, true);
+    }
+    
+    // If all origins are allowed (development mode)
+    if (allowedOrigins === "*") {
+      return callback(null, true);
+    }
+    
+    // Check if origin is in allowed list
+    if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}. Allowed origins:`, allowedOrigins);
+      // For debugging, allow but log warning. In production, you can block with:
+      // callback(new Error(`Origin ${origin} not allowed by CORS`));
+      callback(null, true);
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["X-API-Key", "Content-Type"],
+  allowedHeaders: ["X-API-Key", "Content-Type", "Authorization"],
+  exposedHeaders: [],
   optionsSuccessStatus: 200,
+  preflightContinue: false,
 };
 
 app.use(cors(corsOptions));
+
+// Manual OPTIONS handler to ensure preflight requests work
+app.options("*", cors(corsOptions));
+
+// Configure helmet to not interfere with CORS
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false, // Disable CSP to avoid CORS issues
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/", uploadRoutes);

@@ -7,6 +7,15 @@ import { uploadLimiter, viewLimiter } from "../middleware/rateLimiters.js";
 
 const router = Router();
 
+// Handle OPTIONS preflight requests for CORS (must be before other routes)
+router.options("/upload", (req, res) => {
+  res.sendStatus(200);
+});
+
+router.options("/view", (req, res) => {
+  res.sendStatus(200);
+});
+
 router.post("/upload", authenticateApiKey, uploadLimiter, upload.any(), uploadMedia);
 router.get("/view", viewLimiter, viewMedia);
 
