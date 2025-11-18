@@ -4,7 +4,7 @@
   "description": "",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "main": "src/server.js",
   "scripts": {
