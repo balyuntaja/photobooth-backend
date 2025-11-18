@@ -6,6 +6,9 @@ import helmet from "helmet";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import printRoutes from "./routes/printRoutes.js";
 
+// Import Firebase config - will fail fast if credentials are missing
+import "../config/firebase.js";
+
 dotenv.config();
 
 const app = express();
