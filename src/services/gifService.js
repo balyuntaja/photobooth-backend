@@ -1,5 +1,7 @@
 import sharp from "sharp";
-import GIFEncoder from "gifencoder";
+
+// Lazy import gifencoder to make it optional for Vercel deployment
+let gifencoderPromise = null;
 
 const MAX_WIDTH = 800;
 const MAX_HEIGHT = 600;
@@ -9,6 +11,24 @@ const GIF_QUALITY = 10;
 export const createGifFromPhotos = async (photoFiles) => {
   if (!photoFiles || photoFiles.length === 0) {
     throw new Error("No photos to create GIF from");
+  }
+
+  // Try to import gifencoder lazily (optional for Vercel)
+  let GIFEncoder;
+  try {
+    if (!gifencoderPromise) {
+      gifencoderPromise = import("gifencoder");
+    }
+    const gifencoderModule = await gifencoderPromise;
+    GIFEncoder = gifencoderModule.default || gifencoderModule;
+  } catch (error) {
+    console.warn("gifencoder not available, GIF generation will be skipped:", error.message);
+    return null;
+  }
+
+  if (!GIFEncoder) {
+    console.warn("GIFEncoder not available, skipping GIF generation");
+    return null;
   }
 
   const framesToUse = photoFiles.slice(1); // skip first photo as requested
