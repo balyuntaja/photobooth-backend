@@ -72,8 +72,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Manual OPTIONS handler to ensure preflight requests work
-app.options("*", cors(corsOptions));
+// Note: cors() middleware automatically handles OPTIONS requests, so no need for manual handler
 
 // Configure helmet to not interfere with CORS
 app.use(
