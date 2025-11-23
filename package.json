@@ -20,14 +20,11 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "escpos": "^3.0.0-alpha.6",
-    "escpos-usb": "^3.0.0-alpha.4",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
     "express-validator": "^7.3.0",
     "firebase-admin": "^13.6.0",
     "helmet": "^8.1.0",
-    "jimp": "^0.16.1",
     "multer": "^2.0.2",
     "nodemon": "^3.1.10",
     "sharp": "^0.34.5"

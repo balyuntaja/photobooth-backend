@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 
 import uploadRoutes from "./routes/uploadRoutes.js";
-import printRoutes from "./routes/printRoutes.js";
 
 // Import Firebase config - will fail fast if credentials are missing
 import "../config/firebase.js";
@@ -84,7 +83,6 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/", uploadRoutes);
-app.use("/", printRoutes);
 
 // Export the app for Vercel serverless functions
 export default app;
