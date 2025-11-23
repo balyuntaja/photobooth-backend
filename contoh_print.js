@@ -1,8 +1,8 @@
-import { Router } from "express";
-import multer from "multer";
-import Jimp from "jimp";
-import escpos from "escpos";
-import usb from "escpos-usb";
+import express from 'express';
+import multer from 'multer';
+import Jimp from 'jimp';
+import escpos from 'escpos';
+import usb from 'escpos-usb';
 
 // Set USB module
 escpos.USB = usb;
@@ -11,7 +11,8 @@ escpos.USB = usb;
 const device = new escpos.USB(0x0418, 0x5011);
 const printer = new escpos.Printer(device);
 
-const router = Router();
+const app = express();
+app.use(express.json());
 
 // Multer memory upload
 const upload = multer({
@@ -77,13 +78,8 @@ async function floydSteinberg(image) {
 // ------------------------------------------------------
 // PRINT ENDPOINT
 // ------------------------------------------------------
-// Handle OPTIONS preflight requests for CORS
-router.options("/print", (req, res) => {
-  res.sendStatus(200);
-});
-
 // Using upload.any() to accept any field name
-router.post("/print", upload.any(), async (req, res) => {
+app.post('/print', upload.any(), async (req, res) => {
   try {
     // Get the first file from any field
     const file = req.files && req.files.length > 0 ? req.files[0] : null;
@@ -141,5 +137,4 @@ router.post("/print", upload.any(), async (req, res) => {
   }
 });
 
-export default router;
-
+app.listen(3000, () => console.log("Server running on :3000"));
