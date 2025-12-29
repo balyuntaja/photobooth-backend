@@ -33,6 +33,10 @@ validateDuitkuEnv();
 
 const app = express();
 
+// Trust proxy - required for Vercel/serverless deployments
+// This allows Express to read X-Forwarded-For header correctly
+app.set('trust proxy', true);
+
 // Default allowed origins (always included)
 const defaultOrigins = [
   "https://receiptbooth-photomate.netlify.app",
