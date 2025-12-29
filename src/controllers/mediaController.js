@@ -288,3 +288,87 @@ export const viewMedia = async (req, res) => {
   }
 };
 
+export const getAllPhotos = async (req, res) => {
+  try {
+    // Get optional query parameters for pagination
+    const limit = parseInt(req.query.limit) || 100; // Default limit 100 files
+    const offset = parseInt(req.query.offset) || 0;
+
+    // Get all files from bucket
+    const [files] = await bucket.getFiles();
+
+    if (!files || files.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No files found in storage",
+        count: 0,
+        total: 0,
+        files: [],
+      });
+    }
+
+    // Process files to get metadata and URLs
+    const fileList = await Promise.all(
+      files.map(async (file) => {
+        const [metadata] = await file.getMetadata();
+
+        let publicUrl;
+        try {
+          [publicUrl] = await file.getSignedUrl({
+            action: "read",
+            expires: Date.now() + 365 * 24 * 60 * 60 * 1000,
+          });
+        } catch (error) {
+          const encodedFileName = encodeURIComponent(file.name);
+          publicUrl = `${FIREBASE_BASE_URL}/o/${encodedFileName}?alt=media`;
+        }
+
+        // Extract sessionId and photoIndex from filename
+        // Format: {sessionId}-{photoIndex}.{ext} or {sessionId}-gif.{ext}
+        const sessionMatch = file.name.match(/^([^-]+)-/);
+        const sessionId = sessionMatch ? sessionMatch[1] : null;
+        const photoIndexMatch = file.name.match(/-(\d+|gif)\./);
+        const photoIndex = photoIndexMatch ? photoIndexMatch[1] : null;
+
+        return {
+          name: file.name,
+          url: publicUrl,
+          sessionId,
+          photoIndex,
+          contentType: metadata.contentType,
+          size: metadata.size,
+          timeCreated: metadata.timeCreated,
+          updated: metadata.updated,
+        };
+      })
+    );
+
+    // Sort by timeCreated (newest first)
+    fileList.sort((a, b) => {
+      const timeA = new Date(a.timeCreated).getTime();
+      const timeB = new Date(b.timeCreated).getTime();
+      return timeB - timeA;
+    });
+
+    // Apply pagination
+    const total = fileList.length;
+    const paginatedFiles = fileList.slice(offset, offset + limit);
+
+    return res.status(200).json({
+      success: true,
+      bucketUrl: FIREBASE_BASE_URL,
+      count: paginatedFiles.length,
+      total,
+      limit,
+      offset,
+      files: paginatedFiles,
+    });
+  } catch (error) {
+    console.error("Get all photos error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+};
+

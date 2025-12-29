@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 import uploadRoutes from "./routes/uploadRoutes.js";
 
@@ -9,6 +10,26 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import "../config/firebase.js";
 
 dotenv.config();
+
+// Validate required environment variables for Duitku (if payment routes are used)
+const validateDuitkuEnv = () => {
+  // Only validate if payment routes are being used
+  // Check if any Duitku env vars are set (indicates payment is being used)
+  if (process.env.DUITKU_MERCHANT_CODE || process.env.DUITKU_API_KEY) {
+    const required = ['DUITKU_MERCHANT_CODE', 'DUITKU_API_KEY', 'DUITKU_BASE_URL', 'BASE_URL'];
+    const missing = required.filter(key => !process.env[key]);
+    
+    if (missing.length > 0) {
+      console.error(`⚠️  Warning: Missing Duitku environment variables: ${missing.join(', ')}`);
+      console.error('⚠️  Payment functionality may not work correctly.');
+    } else {
+      console.log('✅ Duitku environment variables validated');
+    }
+  }
+};
+
+// Validate on startup
+validateDuitkuEnv();
 
 const app = express();
 
@@ -40,17 +61,17 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // Always allow Netlify origin
     if (origin === "https://receiptbooth-photomate.netlify.app") {
       return callback(null, true);
     }
-    
+
     // If all origins are allowed (development mode)
     if (allowedOrigins === "*") {
       return callback(null, true);
     }
-    
+
     // Check if origin is in allowed list
     if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -83,6 +104,8 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/", uploadRoutes);
+
+app.use('/api/payment', paymentRoutes);
 
 // Export the app for Vercel serverless functions
 export default app;
